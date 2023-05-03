@@ -2,7 +2,7 @@ import cv2
 from os import listdir, getcwd
 from os.path import isfile, exists
 from tkinter import *
-#from tkinter import filedialog
+from tkinter import filedialog
 from PIL import Image, ImageTk
 
 
@@ -56,8 +56,6 @@ def updatePreview(f, angle):
     f[1] = n_x          # save width of preview image
     f[2] = n_y          # save heigt of preview image
 
-
-
 def updateMarkers(f):  # position of marker X1 in the original image, position of marker X2 in the original image, position of marker Y1 in the original image, position of marker Y2 in the original image; width of the original image, height of the original image
     global x1_pos
     global x2_pos
@@ -86,7 +84,6 @@ def updateMarkers(f):  # position of marker X1 in the original image, position o
     canvas.move(y2_bar, 0, delta)
     y2_pos += delta
 
-
 def updateSliders():
     global x1_pos
     global x2_pos
@@ -114,7 +111,6 @@ def updateSliders():
     y2_slider.set(y2_pos)
 
     return 
-
 
 def x1_slider_update(a):
     global x1_pos
@@ -160,7 +156,6 @@ def y2_slider_update(a):
     canvas.move(y2_bar, 0, delta)                       # move the marker to new position; area[0] = starting position of the valid reagion in the original picture
     y2_pos += delta                                     # update position of the marker
 
-
 def next():
     global current_image
     global rotation
@@ -186,7 +181,6 @@ def next():
     rotation  = 0
     pos_cnt.config( text = str(current_image+1) + '/' + str(len(files)) )
 
-
 def previous():
     global current_image
     global rotation
@@ -211,7 +205,6 @@ def previous():
     updateSliders()
     rotation  = 0
     pos_cnt.config( text = str(current_image+1) + '/' + str(len(files)) )
-
 
 def openDir():
     global files
@@ -257,11 +250,9 @@ def openDir():
     rotation  = 0
     pos_cnt.config( text = str(current_image+1) + '/' + str(len(files)) )
     
-
 def selectDir():
     dir_field_text.set( filedialog.askdirectory() )
     
-
 def crop_all():
     global files
     global current_image
@@ -311,7 +302,6 @@ def crop_all():
     canvas.move(y1_bar, 0, -y1_pos)
     canvas.move(y2_bar, 0, -y2_pos)
 
-
 def apply():
 
     if(len(files)<1):
@@ -326,7 +316,6 @@ def apply():
     files[current_image][6] = int(round(y2_slider.get() * y_ratio))
 
     files[current_image][9] = rotation
-
 
 def rot_left():
     global rotation
@@ -360,7 +349,6 @@ def rot_left():
 
     updateMarkers(files[current_image])
     updateSliders() 
-
 
 def rot_right():
     global rotation
@@ -396,7 +384,6 @@ def rot_right():
     updateSliders() 
 
 
-print(__file__)
 
 window = Tk()
 window.title("Cropper")
