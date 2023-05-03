@@ -4,6 +4,7 @@ from os.path import isfile, exists
 from tkinter import *
 from tkinter import filedialog
 from PIL import Image, ImageTk
+import threading
 
 
 current_image = 0
@@ -13,6 +14,7 @@ x2_pos = 0
 y1_pos = 0 
 y2_pos = 0             
 rotation = 0
+cropped = 0
 
 def bounderies_detect(img_):    # return:  x of valid area, y of valid area, w of valid area, h of valid area, width of whole image, height of whole iamge 
     gray = cv2.cvtColor(img_, cv2.COLOR_BGR2GRAY)
@@ -253,38 +255,62 @@ def openDir():
 def selectDir():
     dir_field_text.set( filedialog.askdirectory() )
     
+def crop(f_, outpath_, picsToCrop_):
+    global cropped
+
+    img_ = cv2.imread(f_[0])
+
+    if(f_[9] == -90):
+        img_ = cv2.rotate(img_, cv2.ROTATE_90_CLOCKWISE)
+    elif(f_[9] == 90):
+        img_ = cv2.rotate(img_, cv2.ROTATE_90_COUNTERCLOCKWISE)
+    elif( abs(f_[9]) == 180 ):
+        img_ = cv2.rotate(img_, cv2.ROTATE_180)
+    elif(f_[9] == 270):
+        img_ = cv2.rotate(img_, cv2.ROTATE_90_CLOCKWISE)
+    elif(f_[9] == -270):
+        img_ = cv2.rotate(img_, cv2.ROTATE_90_COUNTERCLOCKWISE)
+
+    cv2.imwrite(outpath_, img_[f_[5]:f_[6], f_[3]:f_[4]], [int(cv2.IMWRITE_JPEG_QUALITY), 100])
+
+    lock = threading.Lock()
+
+    lock.acquire()
+    cropped += 1
+    crop_cnt.config( text = str(cropped) + '/' + str(picsToCrop_) )
+    lock.release()
+
+
+
 def crop_all():
     global files
     global current_image
+    global cropped
+
+    threads = []
+    picsToCrop = 0
+    cropped = 0
 
     if(len(files)<1):
         return
 
-    pos_cnt.config( text = '0/' + str(len(files)) )
+    for f in files:
+        if(f[3] != -1):
+            picsToCrop += 1
+
+    crop_cnt.config( text = '0/' + str(picsToCrop) )
 
     for f in files:
         if(f[3] == -1):
             continue
-        img_ = cv2.imread(f[0])
-        x1_ = f[3]
-        x2_ = f[4]
-        y1_ = f[5]
-        y2_ = f[6]
-
-        if(f[9] == -90):
-            img_ = cv2.rotate(img_, cv2.ROTATE_90_CLOCKWISE)
-        elif(f[9] == 90):
-            img_ = cv2.rotate(img_, cv2.ROTATE_90_COUNTERCLOCKWISE)
-        elif( abs(f[9]) == 180 ):
-            img_ = cv2.rotate(img_, cv2.ROTATE_180)
-        elif(f[9] == 270):
-            img_ = cv2.rotate(img_, cv2.ROTATE_90_CLOCKWISE)
-        elif(f[9] == -270):
-            img_ = cv2.rotate(img_, cv2.ROTATE_90_COUNTERCLOCKWISE)
 
         filename = f[0].split('.')[0] + '.jpeg'
 
-        cv2.imwrite(filename, img_[y1_:y2_, x1_:x2_], [int(cv2.IMWRITE_JPEG_QUALITY), 100])
+        threads.append( threading.Thread(target=crop, args=(f, filename, picsToCrop)) )
+        threads[-1].start()
+
+
+
 
 
     files.clear()
@@ -454,5 +480,9 @@ rot_left_butt.place(height=25, width=50, x=90, y=45)
 # position label
 pos_cnt = Label(window, text="")
 pos_cnt.place(height=15, width=35, x=426, y=80)
+
+# crop cnt  label
+crop_cnt = Label(window, text="")
+crop_cnt.place(height=15, width=35, x=244, y=585)
 
 window.mainloop()
