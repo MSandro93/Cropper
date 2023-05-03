@@ -31,7 +31,7 @@ def bounderies_detect(img_):    # return:  x of valid area, y of valid area, w o
 def updatePreview(f, angle):
     img1 = Image.open(f[0])
 
-    if(rotation != 0):
+    if(angle != 0):
         img1 = img1.rotate(angle)
 
     f[7] = img1.width   # save width of original image
@@ -172,7 +172,7 @@ def next():
     if current_image >= len(files):
         current_image = len(files) - 1                                          # clip the position in the list of images to end of list
 
-    updatePreview(files[current_image], 0)                                         # update the dispalyed preview image with the new current one
+    updatePreview(files[current_image], files[current_image][9])                                         # update the dispalyed preview image with the new current one
 
     if(files[current_image][4] == -1):
         area, x_t, y_t = bounderies_detect( cv2.imread(files[current_image][0]) )   # perform detection of the black frame at the new current image; area_ list, consisting of the x and y position of the valid area, flowed by the total width and height of the image
@@ -198,7 +198,7 @@ def previous():
     if current_image <= 0:
         current_image = 0
 
-    updatePreview(files[current_image], 0)
+    updatePreview(files[current_image], files[current_image][9])
  
     if(files[current_image][4] == -1):
         area, x_t, y_t = bounderies_detect( cv2.imread(files[current_image][0]) )   # perform detection of the black frame at the new current image; area_ list, consisting of the x and y position of the valid area, flowed by the total width and height of the image
