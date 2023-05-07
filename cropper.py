@@ -5,6 +5,7 @@ from tkinter import *
 from tkinter import filedialog
 from PIL import Image, ImageTk
 import threading
+import time
 
 
 current_image = 0
@@ -280,6 +281,22 @@ def crop(f_, outpath_, picsToCrop_):
     crop_cnt.config( text = str(cropped) + '/' + str(picsToCrop_) )
     lock.release()
 
+def spinner(picsToCrop_):
+    global cropped
+    spinner = 0
+
+    while cropped != picsToCrop_:
+        text_ = "running"
+        for i in range(spinner):
+            text_ += '.'
+        running_indicator.config( text = text_ )
+        time.sleep(0.5)
+        
+        spinner += 1
+        if spinner == 4:
+            spinner = 0
+
+    running_indicator.config( text = "")
 
 
 def crop_all():
@@ -309,11 +326,13 @@ def crop_all():
         threads.append( threading.Thread(target=crop, args=(f, filename, picsToCrop)) )
         threads[-1].start()
 
-
+    s = threading.Thread(target=spinner, args=[picsToCrop])
+    s.start()
 
 
 
     files.clear()
+    threads.clear()
     current_image = 0
     canvas.image = None
     x1_slider.set(0)
@@ -481,8 +500,12 @@ rot_left_butt.place(height=25, width=50, x=90, y=45)
 pos_cnt = Label(window, text="")
 pos_cnt.place(height=15, width=35, x=426, y=80)
 
+# running indicator label
+running_indicator = Label(window, text="", anchor='w')
+running_indicator.place(height=15, width=70, x=244, y=585)
+
 # crop cnt  label
 crop_cnt = Label(window, text="")
-crop_cnt.place(height=15, width=35, x=244, y=585)
+crop_cnt.place(height=15, width=35, x=244, y=585+30)
 
 window.mainloop()
