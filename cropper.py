@@ -321,7 +321,7 @@ def crop_all():
         if(f[3] == -1):
             continue
 
-        filename = f[0].split('.')[0] + '.jpeg'
+        filename = '.'.join( f[0].split('.')[0:-1] ) + '.jpeg'
 
         threads.append( threading.Thread(target=crop, args=(f, filename, picsToCrop)) )
         threads[-1].start()
