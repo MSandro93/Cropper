@@ -340,6 +340,11 @@ def crop_all():
     y1_slider.set(0)
     y2_slider.set(0)
 
+    x1_pos = 0
+    x2_pos = 0
+    y1_pos = 0
+    y2_pos = 0
+
     pos_cnt.config( text = "" )
 
     canvas.move(x1_bar, -x1_pos, 0)
