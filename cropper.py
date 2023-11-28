@@ -3,7 +3,7 @@ from os import listdir, getcwd
 from os.path import isfile, exists
 from tkinter import *
 from tkinter import filedialog
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk, ImageOps
 import threading
 import time
 
@@ -15,12 +15,17 @@ x2_pos = 0
 y1_pos = 0 
 y2_pos = 0             
 rotation = 0
+mirror = False
 cropped = 0
+
+preview_width = 1040
+preview_hight = 845
+preview_ratio = preview_width / preview_hight
 
 def updateSliderEvent(a):
     apply()                 # apply current marker position after manipulating markers by sliders manually. 
 
-def bounderies_detect(img_):    # return:  x of valid area, y of valid area, w of valid area, h of valid area, width of whole image, height of whole iamge 
+def bounderies_detect(img_):    # return:  x of valid area, y of valid area, w of valid area, h of valid area, width of whole image, height of whole image 
     gray = cv2.cvtColor(img_, cv2.COLOR_BGR2GRAY)
     _, threshold = cv2.threshold(gray, 32, 255, cv2.THRESH_BINARY)
     contours, _ = cv2.findContours(threshold, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -34,24 +39,27 @@ def bounderies_detect(img_):    # return:  x of valid area, y of valid area, w o
         
     return (cv2.boundingRect(best_cnt), img_.shape[1], img_.shape[0] )
 
-def updatePreview(f, angle):
+def updatePreview(f, angle: int, mirror: bool):
     img1 = Image.open(f[0])
 
     if(angle != 0):
         img1 = img1.rotate(angle)
+
+    if(mirror == True):
+        img1 = ImageOps.mirror(img1)
 
     f[7] = img1.width   # save width of original image
     f[8] = img1.height  # save heigt of original image
 
     s_x, s_y = img1.size
     ratio = s_x/s_y
-    if(s_x > s_y):
-        n_x = 1040
-        n_y = int(n_x / ratio)
+    if(ratio < preview_ratio):
+        n_y = preview_hight
+        n_x = round(n_y * ratio)
 
     else:
-        n_y = 845
-        n_x = int(n_y * ratio)
+        n_x = preview_width
+        n_y = round(n_x / ratio)
 
     img1 = img1.resize( (n_x, n_y) )
     img1 = ImageTk.PhotoImage(img1)
@@ -165,15 +173,18 @@ def y2_slider_update(a):
 def next():
     global current_image
     global rotation
+    global mirror
 
     if(len(files)<1):
         return
+    
+    apply()
 
     current_image = current_image + 1                                           # update the position in the list of images
     if current_image >= len(files):
         current_image = len(files) - 1                                          # clip the position in the list of images to end of list
 
-    updatePreview(files[current_image], files[current_image][9])                                         # update the dispalyed preview image with the new current one
+    updatePreview(files[current_image], files[current_image][9], files[current_image][10])                                         # update the displayed preview image with the new current one
 
     if(files[current_image][4] == -1):
         area, x_t, y_t = bounderies_detect( cv2.imread(files[current_image][0]) )   # perform detection of the black frame at the new current image; area_ list, consisting of the x and y position of the valid area, flowed by the total width and height of the image
@@ -185,20 +196,24 @@ def next():
     updateMarkers(files[current_image])
     updateSliders()            
     rotation  = 0
+    mirror = False
     pos_cnt.config( text = str(current_image+1) + '/' + str(len(files)) )
 
 def previous():
     global current_image
     global rotation
+    global mirror
 
     if(len(files)<1):
         return
+    
+    apply()
 
     current_image = current_image - 1
     if current_image <= 0:
         current_image = 0
 
-    updatePreview(files[current_image], files[current_image][9])
+    updatePreview(files[current_image], files[current_image][9], files[current_image][10])
  
     if(files[current_image][4] == -1):
         area, x_t, y_t = bounderies_detect( cv2.imread(files[current_image][0]) )   # perform detection of the black frame at the new current image; area_ list, consisting of the x and y position of the valid area, flowed by the total width and height of the image
@@ -210,6 +225,7 @@ def previous():
     updateMarkers(files[current_image])
     updateSliders()
     rotation  = 0
+    mirror = False
     pos_cnt.config( text = str(current_image+1) + '/' + str(len(files)) )
 
 def openDir():
@@ -226,7 +242,7 @@ def openDir():
     for d in listdir(path):
         if isfile(path + "\\" + d):
             if ( (d.lower().endswith('.jpg')) or (d.lower().endswith('.jpeg')) or (d.lower().endswith('.tif')) ):
-                files.append(  [path + "\\" + d, -1, -1, -1, -1, -1, -1, -1, -1, 0]   )
+                files.append(  [path + "\\" + d, -1, -1, -1, -1, -1, -1, -1, -1, 0, False]   )
 
         # files
         #       0: filename
@@ -239,11 +255,12 @@ def openDir():
         #       7: width of original image
         #       8: height of original image
         #       9: rotation
+        #      10: mirror (False; True)
 
     current_image = 0
 
 
-    updatePreview(files[current_image], 0)
+    updatePreview(files[current_image], 0, False)
 
     area, x_t, y_t = bounderies_detect( cv2.imread(files[current_image][0]) )   # perform detection of the black frame at the new current image; area_ list, consisting of the x and y position of the valid area, flowed by the total width and height of the image
     files[current_image][3] = area[0]
@@ -368,10 +385,12 @@ def apply():
     files[current_image][5] = int(round(y1_slider.get() * y_ratio))
     files[current_image][6] = int(round(y2_slider.get() * y_ratio))
 
-    files[current_image][9] = rotation
+    files[current_image][9]  = rotation
+    files[current_image][10] = mirror
 
 def rot_left():
     global rotation
+    global mirror
 
     if(len(files)<1):
         return
@@ -380,7 +399,7 @@ def rot_left():
     if(rotation == 360):
         rotation = 0
 
-    updatePreview(files[current_image], rotation)
+    updatePreview(files[current_image], rotation, mirror)
 
     img_ = cv2.imread(files[current_image][0])
     if(rotation == -90):
@@ -393,6 +412,8 @@ def rot_left():
         img_ = cv2.rotate(img_, cv2.ROTATE_90_CLOCKWISE)
     elif(rotation == -270):
         img_ = cv2.rotate(img_, cv2.ROTATE_90_COUNTERCLOCKWISE)
+    if(mirror == True):
+        img_ = cv2.flip(img_, 1)
 
     area, x_t, y_t = bounderies_detect( img_ )
     files[current_image][3] = area[0]
@@ -405,6 +426,7 @@ def rot_left():
 
 def rot_right():
     global rotation
+    global mirror
 
     if(len(files)<1):
         return
@@ -413,7 +435,7 @@ def rot_right():
     if(rotation == 360):
         rotation = 0
 
-    updatePreview(files[current_image], rotation)
+    updatePreview(files[current_image], rotation, mirror)
 
     img_ = cv2.imread(files[current_image][0])
     if(rotation == -90):
@@ -426,6 +448,8 @@ def rot_right():
         img_ = cv2.rotate(img_, cv2.ROTATE_90_CLOCKWISE)
     elif(rotation == -270):
         img_ = cv2.rotate(img_, cv2.ROTATE_90_COUNTERCLOCKWISE)
+    if(mirror == True):
+        img_ = cv2.flip(img_, 1)
 
     area, x_t, y_t = bounderies_detect( img_ )
     files[current_image][3] = area[0]
@@ -436,6 +460,41 @@ def rot_right():
     updateMarkers(files[current_image])
     updateSliders() 
 
+def mirror_func():
+    global mirror
+
+    if(len(files)<1):
+        return
+
+    if mirror == False:
+        mirror = True
+    else:
+        mirror = False
+
+    updatePreview(files[current_image], rotation, mirror)
+
+    img_ = cv2.imread(files[current_image][0])
+    if(rotation == -90):
+        img_ = cv2.rotate(img_, cv2.ROTATE_90_CLOCKWISE)
+    elif(rotation == 90):
+        img_ = cv2.rotate(img_, cv2.ROTATE_90_COUNTERCLOCKWISE)
+    elif( abs(rotation) == 180 ):
+        img_ = cv2.rotate(img_, cv2.ROTATE_180)
+    elif(rotation == 270):
+        img_ = cv2.rotate(img_, cv2.ROTATE_90_CLOCKWISE)
+    elif(rotation == -270):
+        img_ = cv2.rotate(img_, cv2.ROTATE_90_COUNTERCLOCKWISE)
+    if(mirror == True):
+        img_ = cv2.flip(img_, 1)
+
+    area, x_t, y_t = bounderies_detect( img_ )
+    files[current_image][3] = area[0]
+    files[current_image][4] = area[0]+area[2]
+    files[current_image][5] = area[1]
+    files[current_image][6] = area[1]+area[3]
+
+    updateMarkers(files[current_image])
+    updateSliders() 
 
 
 window = Tk()
@@ -455,17 +514,17 @@ dir_field = Entry(window, textvariable=dir_field_text)
 dir_field.place(height=25, width=800, x=615, y=10)  
 
 # preview image
-canvas = Canvas(window, width=1040, height= 845)
-a = canvas.create_rectangle(0, 0,  1040, 845, fill='gray')
+canvas = Canvas(window, width=preview_width, height= preview_hight)
+a = canvas.create_rectangle(0, 0,  preview_width, preview_hight, fill='gray')
 canvas.move(a, 0, 0)
 image_container = canvas.create_image(0,0, anchor="nw")
-canvas.place(height=845, width=1040, x=545, y=45)
+canvas.place(height=preview_hight, width=preview_width, x=545, y=45)
 
 # markers
-x1_bar = canvas.create_line(0, 0, 0, 845, fill="red", width=1)
-x2_bar = canvas.create_line(0, 0, 0, 845, fill="red", width=1)
-y1_bar = canvas.create_line(0, 0, 1040, 0, fill="red", width=1)
-y2_bar = canvas.create_line(0, 0, 1040, 0, fill="red", width=1)
+x1_bar = canvas.create_line(0, 0, 0, preview_hight, fill="red", width=1)
+x2_bar = canvas.create_line(0, 0, 0, preview_hight, fill="red", width=1)
+y1_bar = canvas.create_line(0, 0, preview_width, 0, fill="red", width=1)
+y2_bar = canvas.create_line(0, 0, preview_width, 0, fill="red", width=1)
 
 
 #sliders for border adjustments
@@ -504,6 +563,11 @@ rot_left_butt.place(height=25, width=50, x=20, y=45)
 rot_right_img = PhotoImage(file=getcwd() + '\\rot_r.png')
 rot_left_butt = Button(window, image=rot_right_img ,command=rot_right)
 rot_left_butt.place(height=25, width=50, x=90, y=45)
+
+# mirror button
+mirror_img = PhotoImage(file=getcwd() + '\\mirror.png')
+mirror_butt = Button(window, image=mirror_img ,command=mirror_func)
+mirror_butt.place(height=25, width=50, x=90+70, y=45)
 
 # position label
 pos_cnt = Label(window, text="")
