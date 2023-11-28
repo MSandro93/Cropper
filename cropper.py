@@ -43,7 +43,7 @@ def updatePreview(f, angle: int, mirror: bool):
     img1 = Image.open(f[0])
 
     if(angle != 0):
-        img1 = img1.rotate(angle)
+        img1 = img1.rotate(angle, expand=True)
 
     if(mirror == True):
         img1 = ImageOps.mirror(img1)
@@ -319,10 +319,12 @@ def spinner(picsToCrop_):
     running_indicator.config( text = "")
 
 
-def crop_all():
+def crop_all(): 
     global files
     global current_image
     global cropped
+
+    apply()
 
     threads = []
     picsToCrop = 0
