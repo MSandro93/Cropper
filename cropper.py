@@ -17,6 +17,9 @@ y2_pos = 0
 rotation = 0
 cropped = 0
 
+def updateSliderEvent(a):
+    apply()                 # apply current marker position after manipulating markers by sliders manually. 
+
 def bounderies_detect(img_):    # return:  x of valid area, y of valid area, w of valid area, h of valid area, width of whole image, height of whole iamge 
     gray = cv2.cvtColor(img_, cv2.COLOR_BGR2GRAY)
     _, threshold = cv2.threshold(gray, 32, 255, cv2.THRESH_BINARY)
@@ -464,22 +467,23 @@ x2_bar = canvas.create_line(0, 0, 0, 845, fill="red", width=1)
 y1_bar = canvas.create_line(0, 0, 1040, 0, fill="red", width=1)
 y2_bar = canvas.create_line(0, 0, 1040, 0, fill="red", width=1)
 
-# Apply Button
-enable_sliders_butt = Button(window, text = "Apply",command=apply)  
-enable_sliders_butt.place(height=30, width=100, x=212, y=200)
 
 #sliders for border adjustments
 x1_slider = Scale(window, from_=0, to_=3, label="left", showvalue=0, orient=HORIZONTAL, command=x1_slider_update)
 x1_slider.place(width=485, x=20, y=95)
+x1_slider.bind("<ButtonRelease-1>", updateSliderEvent)
 
 x2_slider = Scale(window, from_=0, to_=3, label="right", showvalue=0, orient=HORIZONTAL, command=x2_slider_update)
 x2_slider.place(width=485, x=20, y=140)
+x2_slider.bind("<ButtonRelease-1>", updateSliderEvent)
 
 y1_slider = Scale(window, from_=0, to_=3, label="top", showvalue=0, orient=HORIZONTAL, command=y1_slider_update)
 y1_slider.place(width=485, x=20, y=230)
+y1_slider.bind("<ButtonRelease-1>", updateSliderEvent)
 
 y2_slider = Scale(window, from_=0, to_=3, label="bottom", showvalue=0, orient=HORIZONTAL, command=y2_slider_update)
 y2_slider.place(width=485, x=20, y=275)
+y2_slider.bind("<ButtonRelease-1>", updateSliderEvent)
 
 # navigation buttons
 next_butt = Button(window, text = "->",command=next)  
