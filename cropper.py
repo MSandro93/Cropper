@@ -27,6 +27,7 @@ def updateSliderEvent(a):
 
 def bounderies_detect(img_):    # return:  x of valid area, y of valid area, w of valid area, h of valid area, width of whole image, height of whole image 
     gray = cv2.cvtColor(img_, cv2.COLOR_BGR2GRAY)
+
     _, threshold = cv2.threshold(gray, 32, 255, cv2.THRESH_BINARY)
     contours, _ = cv2.findContours(threshold, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
@@ -261,7 +262,6 @@ def openDir():
 
 
     updatePreview(files[current_image], 0, False)
-
     area, x_t, y_t = bounderies_detect( cv2.imread(files[current_image][0]) )   # perform detection of the black frame at the new current image; area_ list, consisting of the x and y position of the valid area, flowed by the total width and height of the image
     files[current_image][3] = area[0]
     files[current_image][4] = area[0]+area[2]
@@ -272,6 +272,8 @@ def openDir():
     updateSliders()
     rotation  = 0
     pos_cnt.config( text = str(current_image+1) + '/' + str(len(files)) )
+
+    return
     
 def selectDir():
     dir_field_text.set( filedialog.askdirectory() )
@@ -579,7 +581,7 @@ pos_cnt.place(height=15, width=35, x=426, y=80)
 running_indicator = Label(window, text="", anchor='w')
 running_indicator.place(height=15, width=70, x=244, y=585)
 
-# crop cnt  label
+# crop cnt label
 crop_cnt = Label(window, text="")
 crop_cnt.place(height=15, width=35, x=244, y=585+30)
 
